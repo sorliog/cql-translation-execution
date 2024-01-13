@@ -1,0 +1,1 @@
+Clinical Quality Langauge version 3.2.0 [link](https://github.com/cqframework/clinical_quality_language/releases/tag/v3.2.0)

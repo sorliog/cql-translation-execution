@@ -10,7 +10,7 @@
     </parent>
     <groupId>com.cdss4pcp</groupId>
     <artifactId>cqltestserver</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>1.0.0</version>
     <name>cqltestserver</name>
     <description>cqltestserver</description>
     <packaging>jar</packaging>
