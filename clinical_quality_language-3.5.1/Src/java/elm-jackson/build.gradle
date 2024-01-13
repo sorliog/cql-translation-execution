@@ -1,0 +1,11 @@
+plugins {
+    id 'cql.library-conventions'
+}
+
+dependencies {
+    api project(':model')
+    api project(':elm')
+    implementation 'org.apache.commons:commons-text:1.10.0'
+    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.15.2'
+    implementation 'com.fasterxml.jackson.module:jackson-module-jakarta-xmlbind-annotations:2.15.2'
+}

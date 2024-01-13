@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test CDSS</title>
+    <style>
+        .results-table {
+            border: solid 2px black;
+        }
+
+        .results-table-cell {
+            border: dashed 1px black;
+            padding: 5px;
+        }
+    </style>
+    <script src="main.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <link type="text/css" rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+</head>
+
+
+<body>
+
+<header><h2 class="text-center">CDSS CQL File Runner</h2></header>
+<div id="form-div">
+    <form onsubmit="onSubmit(); return false;">
+        <fieldset class="form-group border p-3">
+            <legend class="w-auto px-2"> Rule settings</legend>
+            <div class="mb-3">
+                <label for="rule-file-input" class="form-label">
+                    <span class="h5"> Rule file <small class="p">(ELM-JSON format)</small></span>
+                </label>
+                <input type="file" class="form-control" id="rule-file-input" required>
+            </div>
+
+
+            <div class="mb-3">
+                <label for="library-input" class="form-label">
+                    <span class="h5">Library <small class="p">(ELM-JSON format)</small></span>
+                </label>
+                <input type="file" class="form-control" id="library-input">
+            </div>
+        </fieldset>
+
+        <fieldset class="form-group border p-3">
+            <legend class="w-auto px-2"> Patient Settings</legend>
+            <div class="mb-3">
+                <label for="patient-bundle-input" class="form-label">
+                    <span class="h5">Patient Bundle <small class="p">(JSON format)</small></span>
+                </label>
+                <input type="file" class="form-control" id="patient-bundle-input" required>
+            </div>
+
+
+            <div id="parameters-div" class="mb-3">
+                <p class="h5"> Parameters</p>
+                <div class="row">
+                    <div class="col border">
+                        <p>Parameter Key</p>
+                    </div>
+                    <div class="col border">
+                        <p>Parameter file</p>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col border">
+                        <input type="text" placeholder="parameterKey" id="parameter-1-key">
+                    </div>
+                    <div class="col border">
+                        <input type="file" id="parameter-1-input">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col border">
+                        <input type="text" placeholder="parameterKey" id="parameter-2-key">
+                    </div>
+                    <div class="col border">
+                        <input type="file" id="parameter-2-input">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col border">
+                        <input type="text" placeholder="parameterKey" id="parameter-3-key">
+                    </div>
+                    <div class="col border">
+                        <input type="file" id="parameter-3-input">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col border">
+                        <input type="text" placeholder="parameterKey" id="parameter-4-key">
+                    </div>
+                    <div class="col border">
+                        <input type="file" id="parameter-4-input">
+                    </div>
+                </div>
+            </div>
+        </fieldset>
+
+        <div class="row">
+            <div class="col text-center">
+
+                <label for="show-verbose-input" class="form-label">Show verbose?</label>
+                <input type="checkbox" id="show-verbose-input">
+            </div>
+        </div>
+        <div class="row">
+            <div class="col text-center">
+                <input type="submit" class="btn btn-primary" width="100" style="width: 100px"/>
+            </div>
+        </div>
+    </form>
+
+</div>
+
+
+<div>
+    <fieldset class="form-group border p-3">
+        <legend class="w-auto px-2">Results</legend>
+        <div class="row">
+            <div class="col" id="results-section"></div>
+
+        </div>
+
+    </fieldset>
+
+</div>
+
+<script>
+
+    function getParameterId(parameterInput) {
+        let id = parameterInput.id;
+        let number = id.substring(id.indexOf("-") + 1,
+            id.lastIndexOf("-"));
+
+        return Number(number);
+    }
+
+    async function parseJSON(file) {
+        const reader = new FileReader();
+        reader.readAsText(file);
+        const result = await new Promise((resolve, reject) => {
+            reader.onload = function (event) {
+                resolve(reader.result)
+            }
+        })
+        return JSON.parse(result);
+    }
+
+    async function parseTextFile(file) {
+        const reader = new FileReader();
+        reader.readAsText(file);
+        const result = await new Promise((resolve, reject) => {
+            reader.onload = function (event) {
+                resolve(reader.result)
+            }
+        })
+        return result;
+    }
+
+    async function translateCqlToElm(cqlContent) {
+        let response = await fetch("/translate", {
+            method: "POST",
+            body: cqlContent
+        });
+        if (response.status === 200) {
+            return await response.json();
+
+        } else {
+
+            let errorText = await response.text()
+            throw new Error(errorText);
+        }
+    }
+
+    async function onSubmit() {
+
+        console.log("Reading Inputs");
+        let ruleFileInput = document.getElementById("rule-file-input");
+        let libraryInput = document.getElementById("library-input");
+        let patientBundleInput = document.getElementById("patient-bundle-input");
+        let showVerbose = document.getElementById("show-verbose-input").checked;
+
+        let parameterInputs = document.getElementById("parameters-div").querySelectorAll("input[type='file']");
+        let ruleFile = ruleFileInput.files[0];
+        let libraryFile = libraryInput.files[0];
+        let patientBundleFile = patientBundleInput.files[0];
+
+        var rule = null;
+        var library = null;
+        var patientBundle = null;
+        var parameters = {};
+
+        try {
+            if (ruleFile) {
+                if (ruleFile.name.endsWith(".json")) {
+
+                    console.log("Found JSON rule file: " + ruleFile.name);
+                    rule = await parseJSON(ruleFile);
+                    console.log("Successfully Parsed JSON rule file");
+
+                } else if (ruleFile.name.endsWith(".cql")) {
+                    console.log("Found CQL rule file: " + ruleFile.name);
+                    console.log("Translating CQL rule file: " + ruleFile.name);
+                    rule = await translateCqlToElm(await parseTextFile(ruleFile));
+                    console.log("Successfully Translated and Parsed JSON rule file: " + ruleFile.name);
+
+                } else {
+                    console.error("Rule file has unidentified extension: " + ruleFile.name);
+                    alert("Rule file has unidentified extension: " + ruleFile.name);
+                    return;
+                }
+            }
+
+        } catch (e) {
+            console.error(e);
+            alert(e);
+
+            return;
+        }
+        try {
+            if (libraryFile) {
+                if (libraryFile.name.endsWith(".json"))
+                    library = await parseJSON(libraryFile);
+                else if (libraryFile.name.endsWith(".cql")) {
+                    console.log("Found CQL library file: " + libraryFile.name);
+                    console.log("Translating CQL library file: " + libraryFile.name);
+                    library = await translateCqlToElm(await parseTextFile(libraryFile));
+                    console.log("Successfully Translated and Parsed JSON rule file: " + ruleFile.name);
+                }
+            }
+        } catch (e) {
+            console.error(e);
+            alert(e);
+
+            return;
+        }
+
+        try {
+            if (patientBundleFile) {
+                console.log("Found patientBundle file: " + patientBundleFile.name);
+                patientBundle = await parseJSON(patientBundleFile);
+                console.log("Successfully Parsed JSON patientBundle file");
+            }
+        } catch (e) {
+            console.error(e);
+            alert(e);
+
+            return;
+        }
+
+        try {
+            for (const parameterInput of parameterInputs) {
+                if (parameterInput.files.length > 0) {
+
+                    let number = getParameterId(parameterInput);
+                    let parameterName = document.getElementById("parameter-" + number + "-key").value;
+                    console.log("Found parameter: " + parameterName);
+                    parameters[parameterName] = await parseJSON(parameterInput.files[0]);
+                    console.log("Successfully Parsed JSON parameter file for parameter " + parameterName);
+                }
+            }
+        } catch (e) {
+            console.error(e);
+            alert(e);
+
+            return;
+        }
+
+
+        console.log("Starting CQL engine");
+
+        try {
+
+
+            cdss.checkRules(patientBundle, rule, library, parameters).then((result) => {
+                document.getElementById("results-section").innerHTML = "";
+                if (showVerbose) {
+                    document.getElementById("results-section").innerHTML = "<pre>" + JSON.stringify(result, null, 2) + "</pre>"
+                } else {
+
+                    let table = document.createElement("table");
+                    table.setAttribute("class", "results-table");
+                    let headerRow = document.createElement("tr")
+
+                    let entries = Object.keys(result[Object.keys(result)[0]]);
+
+
+                    for (const rule of entries) {
+                        let th = document.createElement("th");
+                        th.innerText = rule;
+                        th.setAttribute("class", "results-table-cell");
+                        headerRow.appendChild(th);
+                    }
+                    table.appendChild(headerRow);
+
+                    let dataRow = document.createElement("tr")
+
+                    for (const patientId of Object.keys(result)) {
+                        for (const rule of Object.keys(result[patientId])) {
+                            let td = document.createElement("td");
+                            td.setAttribute("class", "results-table-cell");
+
+                            if (rule === "Patient") {
+                                let firstName = result[patientId][rule].name[0].given[0].value;
+                                let lastName = result[patientId][rule].name[0].family.value;
+
+                                let id = result[patientId][rule].identifier[0].id;
+                                let display = `<p> ${firstName} ${lastName} <small>${id}</small></p>`;
+                                td.innerHTML = display;
+
+                            } else {
+                                let display = result[patientId][rule];
+                                if (typeof display === "object") {
+                                    td.innerText = JSON.stringify(display);
+                                } else {
+                                    td.innerText = display;
+                                }
+                            }
+                            dataRow.appendChild(td);
+                        }
+
+                    }
+
+                    table.appendChild(dataRow);
+
+                    let tableDiv = document.createElement("div");
+                    tableDiv.appendChild(table);
+                    tableDiv.setAttribute("class", "text-center");
+                    document.getElementById("results-section").appendChild(tableDiv);
+                }
+
+            });
+
+        } catch (e) {
+            console.error(e);
+            alert(e);
+            return;
+        }
+    }
+
+</script>
+
+
+</body>
+</html>
