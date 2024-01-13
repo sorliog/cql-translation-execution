@@ -1,9 +1,9 @@
 #!/bin/sh
 CQL_TEST_SERVER_VERSION="1.0.0"
 
-# First compile server
 if [ ! -e "./cqltestserver/target/cqltestserver-$CQL_TEST_SERVER_VERSION.jar" ];
 then
+  # First compile server
   echo "Could not find ./cqltestserver/target/cqltestserver-$CQL_TEST_SERVER_VERSION.jar"
   echo "Attempting to compile server jar"
   cd cqltestserver
