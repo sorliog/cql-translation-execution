@@ -1,0 +1,49 @@
+{
+  "resourceType": "Patient",
+  "id": "1f744aaf-57c5-476a-bd3c-796c421d6e30",
+  "meta": {
+    "lastUpdated": "2023-12-11T02:36:18.000+00:00"
+  },
+  "text": {
+    "status": "generated",
+    "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"><table class=\"hapiPropertyTable\"><tbody><tr><td>Id:</td><td>1f744aaf-57c5-476a-bd3c-796c421d6e30</td></tr><tr><td>Identifier:</td><td><div>10003A6</div></td></tr><tr><td>Active:</td><td>true</td></tr><tr><td>Name:</td><td> John <b>DOE </b></td></tr><tr><td>Gender:</td><td>MALE</td></tr><tr><td>Birth Date:</td><td>20/12/1989</td></tr><tr><td>Deceased:</td><td>false</td></tr></tbody></table></div>"
+  },
+  "identifier": [
+    {
+      "id": "92723831-0c03-4728-b75e-b43c7ec89f40",
+      "extension": [
+        {
+          "url": "http://fhir.openmrs.org/ext/patient/identifier#location",
+          "valueReference": {
+            "reference": "Location/ba685651-ed3b-4e63-9b35-78893060758a",
+            "type": "Location",
+            "display": "Inpatient Ward"
+          }
+        }
+      ],
+      "use": "official",
+      "type": {
+        "coding": [
+          {
+            "code": "05a29f94-c0ed-11e2-94be-8c13b969e334"
+          }
+        ],
+        "text": "OpenMRS ID"
+      },
+      "value": "10003A6"
+    }
+  ],
+  "active": true,
+  "name": [
+    {
+      "id": "16a6f8b3-b1db-4471-8f31-f7873e53bd7f",
+      "family": "Doe",
+      "given": [
+        "John"
+      ]
+    }
+  ],
+  "gender": "male",
+  "birthDate": "1989-12-20",
+  "deceasedBoolean": false
+}
